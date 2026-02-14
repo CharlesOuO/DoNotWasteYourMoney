@@ -6,17 +6,20 @@
     <title>許凱琳在前女友身上花多少錢</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
             --primary-bg: #f5f5f5;
-            --header-bg: #ff5e57;
+            --header-bg: #ff5e57; /* 預設紅色 (虧損) */
             --header-text: #ffffff;
             --card-bg: #ffffff;
             --text-main: #2d3436;
             --text-sub: #636e72;
             --accent-loss: #ff5e57;
-            --accent-gain: #00b894;
+            --accent-gain: #00b894; /* 獲利/止損綠色 */
             --border-radius: 16px;
+            --nav-height: 70px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -37,10 +40,13 @@
             max-width: 480px;
             background: var(--primary-bg);
             position: relative;
-            padding-bottom: 80px;
+            padding-bottom: calc(var(--nav-height) + 20px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- 頭部區塊 --- */
+        /* --- Header --- */
         header {
             background-color: var(--header-bg);
             color: var(--header-text);
@@ -49,261 +55,342 @@
             border-bottom-right-radius: 30px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(255, 94, 87, 0.3);
+            flex-shrink: 0;
+            transition: all 0.5s ease; /* 平滑過渡效果 */
         }
-
-        h2 { margin: 0; font-size: 1.1rem; font-weight: 500; opacity: 0.9; }
         
-        .main-balance {
-            font-size: 3rem;
-            font-weight: 700;
-            margin: 10px 0 5px;
-            font-family: 'Roboto Mono', monospace;
+        /* 當虧損 <= 0 時的綠色模式 */
+        header.green-mode { 
+            background-color: var(--accent-gain); 
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3); 
         }
 
-        .balance-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px; }
+        h2 { margin: 0; font-size: 1.1rem; font-weight: 500; opacity: 0.9; cursor: pointer; }
+        .main-balance { font-size: 3rem; font-weight: 700; margin: 10px 0 5px; font-family: 'Roboto Mono', monospace; }
+        .balance-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
+        .daily-quote { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; backdrop-filter: blur(5px); }
 
-        .daily-quote {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: inline-block;
-            margin-top: 10px;
-            backdrop-filter: blur(5px);
-        }
+        /* --- Views --- */
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 數據卡片 --- */
+        /* --- Components --- */
         .stats-card {
-            background: var(--card-bg);
-            margin: -40px 20px 20px;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            position: relative;
-            z-index: 10;
+            background: var(--card-bg); margin: -50px 20px 20px; padding: 20px;
+            border-radius: var(--border-radius); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; z-index: 10;
         }
-
         .stat-item { text-align: center; position: relative; }
-        .stat-item:first-child::after {
-            content: ''; position: absolute; right: -10px; top: 10%; height: 80%; width: 1px; background: #eee;
-        }
-        
+        .stat-item:first-child::after { content: ''; position: absolute; right: -10px; top: 15%; height: 70%; width: 1px; background: #eee; }
         .stat-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 5px; }
         .stat-value { font-size: 1.2rem; font-weight: 700; }
         .val-red { color: var(--accent-loss); }
         .val-green { color: var(--accent-gain); }
 
-        /* --- 圖表區 --- */
         .chart-section {
-            background: var(--card-bg);
-            margin: 0 20px 20px;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            text-align: center;
+            background: var(--card-bg); margin: 0 20px 20px; padding: 25px 20px;
+            border-radius: var(--border-radius); box-shadow: 0 2px 10px rgba(0,0,0,0.02); text-align: center;
         }
-        .chart-wrapper { height: 200px; position: relative; }
-        .conversion-text { color: var(--accent-gain); font-weight: bold; margin-bottom: 15px; font-size: 0.9rem; }
+        .chart-wrapper { height: 220px; position: relative; margin-bottom: 10px; }
+        .conversion-text { color: var(--accent-gain); font-weight: bold; margin-bottom: 25px; font-size: 0.95rem; }
+        
+        .chart-title { font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; display: block; }
 
-        /* --- 輸入區 --- */
         .input-section {
-            background: var(--card-bg);
-            margin: 0 20px 20px;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            background: var(--card-bg); margin: -40px 20px 20px; padding: 20px;
+            border-radius: var(--border-radius); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            position: relative; z-index: 10;
         }
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        
         input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #f1f2f6;
-            border-radius: 12px;
-            font-size: 1rem;
-            background: #f1f2f6;
-            color: var(--text-main);
-            transition: all 0.2s;
-            font-family: inherit;
+            width: 100%; padding: 12px 15px; border: 2px solid #f1f2f6; border-radius: 12px;
+            font-size: 1rem; background: #f1f2f6; color: var(--text-main); transition: all 0.2s; font-family: inherit;
         }
-        input:focus, select:focus {
-            outline: none;
-            background: #fff;
-            border-color: var(--header-bg);
-        }
-
+        input:focus, select:focus { outline: none; background: #fff; border-color: var(--header-bg); }
         .add-btn {
-            width: 100%;
-            padding: 15px;
-            background: var(--header-bg);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 94, 87, 0.3);
-            transition: transform 0.1s;
+            width: 100%; padding: 15px; background: var(--header-bg); color: white; border: none;
+            border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 94, 87, 0.3); transition: transform 0.1s;
         }
         .add-btn:active { transform: scale(0.98); }
 
-        /* --- 列表區 --- */
         .list-section { padding: 0 20px; }
         .list-title { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 10px; padding-left: 5px; }
+        .empty-state { text-align: center; padding: 40px 0; color: #b2bec3; font-size: 0.9rem; }
         
         ul { list-style: none; padding: 0; margin: 0; }
-        
         li {
-            background: var(--card-bg);
-            margin-bottom: 12px;
-            padding: 15px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            transition: all 0.3s;
+            background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.3s;
         }
         li.is-settled { opacity: 0.6; background: #f9f9f9; }
         li.is-settled .item-name { text-decoration: line-through; }
 
         .item-left { display: flex; align-items: center; gap: 12px; }
         .cat-icon { 
-            width: 40px; height: 40px; 
-            background: #ffeaa7; color: #fdcb6e; 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
+            width: 40px; height: 40px; background: #ffeaa7; color: #fdcb6e; 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; flex-shrink: 0;
         }
         .item-details { display: flex; flex-direction: column; }
         .item-name { font-weight: 500; font-size: 1rem; margin-bottom: 2px; }
         .item-meta { font-size: 0.75rem; color: #b2bec3; }
 
-        .item-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .item-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
         .item-price { font-weight: 700; font-size: 1.1rem; color: var(--accent-loss); font-family: 'Roboto Mono', monospace; }
+        .item-price.recovered-val { color: var(--accent-gain); }
         .item-price.settled { color: #b2bec3; text-decoration: line-through; }
         
-        .action-btns { display: flex; gap: 5px; }
+        .action-btns { display: flex; gap: 8px; }
         .btn-mini {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
+            padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; border: none; cursor: pointer; font-weight: 500;
         }
         .btn-recover { background: rgba(0, 184, 148, 0.1); color: var(--accent-gain); }
         .btn-del { background: rgba(255, 94, 87, 0.1); color: var(--accent-loss); }
         .btn-settled { background: #eee; color: #999; cursor: default; }
 
-        /* --- 遊戲視窗 (FIXED VERSION) --- */
-        #game-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(45, 52, 54, 0.98); z-index: 9999;
-            justify-content: center; align-items: center; flex-direction: column; color: white;
+        /* --- Settings Page --- */
+        .settings-list { margin-top: -20px; }
+        .setting-item {
+            background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
-        .game-box {
+        .setting-label { font-weight: 500; }
+        .setting-desc { font-size: 0.8rem; color: #999; margin-top: 5px; }
+        .btn-danger { background: #ff7675; color: white; border:none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-normal { background: #0984e3; color: white; border:none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
+            background: #ffffff; border-top: 1px solid #eee;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #b2bec3; text-decoration: none; font-size: 0.75rem; flex: 1; height: 100%;
+            cursor: pointer; transition: color 0.2s;
+        }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 5px; }
+        /* 預設選中顏色 */
+        .nav-item.active { color: var(--header-bg); }
+        /* 綠色模式下的選中顏色 */
+        .green-mode .nav-item.active { color: var(--accent-gain); }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(45, 52, 54, 0.95); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column; padding: 20px;
+        }
+        .modal-box {
             background: #2d3436; border: 1px solid #636e72; color: #dfe6e9;
-            padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center;
+            padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(0); transition: transform 0.3s;
         }
         .game-title { font-size: 1.2rem; color: #fab1a0; margin-bottom: 10px; font-weight: bold; }
-        .q-content { font-size: 1.8rem; font-family: 'Roboto Mono', monospace; font-weight: bold; color: #fff; margin: 20px 0; }
-        
-        /* [修復重點] 輸入框改為白底黑字，確保看得到 */
-        .game-input { 
-            background: #ffffff !important; 
-            border: 3px solid #00b894 !important; 
-            color: #2d3436 !important; 
-            text-align: center; 
-            padding: 15px;
-            font-size: 1.2rem;
-            border-radius: 12px;
-            width: 100%;
-            margin-bottom: 10px;
+        .q-content { font-size: 1.8rem; font-family: 'Roboto Mono', monospace; font-weight: bold; color: #fff; margin: 20px 0; letter-spacing: 3px; }
+        .modal-input { 
+            background: #ffffff !important; border: 3px solid #00b894 !important; color: #2d3436 !important; 
+            text-align: center; padding: 15px; font-size: 1.2rem; border-radius: 12px; width: 100%; margin-bottom: 15px;
+            font-family: 'Noto Sans TC', monospace;
         }
-        
-        .game-btn { background: #00b894; color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; margin-top: 10px; font-size: 1rem; font-weight: bold; cursor: pointer;}
+        .modal-btn { 
+            background: #00b894; color: white; border: none; padding: 12px; border-radius: 10px; 
+            width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s;
+        }
+        .modal-btn:active { background: #00a884; }
+        .modal-btn-cancel { background: #636e72; margin-top: 10px; }
         .dot { width: 8px; height: 8px; background: #636e72; border-radius: 50%; display: inline-block; margin: 0 4px; }
         .dot.active { background: #00b894; transform: scale(1.3); }
+        .reason-box { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; color: #b2bec3; }
 
     </style>
 </head>
 <body>
 
-<div id="game-modal">
-    <div class="game-box">
+<div id="game-modal" class="modal-overlay">
+    <div class="modal-box">
         <div class="game-title">⚠️ 理性驗證 <span id="q-progress">1/5</span></div>
-        <div id="display-reason" style="font-size:0.9rem; color:#b2bec3; margin-bottom:15px; background:rgba(255,255,255,0.1); padding:8px; border-radius:8px;">...</div>
+        <div id="display-reason" class="reason-box">...</div>
         <div style="font-size:0.8rem; color:#636e72;" id="q-type-label">題目類型</div>
         <div class="q-content" id="q-content">...</div>
-        
-        <input type="text" id="game-answer" class="game-input" placeholder="請輸入答案" autocomplete="off">
-        
-        <button class="game-btn" onclick="checkGameAnswer()">送出答案</button>
-        <div style="margin-top:20px;">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        </div>
+        <input type="text" id="game-answer" class="modal-input" placeholder="答案" autocomplete="off">
+        <button class="modal-btn" onclick="checkGameAnswer()">送出答案</button>
+        <div style="margin-top:20px;"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+</div>
+
+<div id="recover-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="game-title" style="color: #00b894;">💰 討回金額</div>
+        <div class="reason-box" id="recover-msg">...</div>
+        <input type="number" id="recover-input" class="modal-input" placeholder="輸入金額" inputmode="numeric">
+        <button class="modal-btn" onclick="confirmRecover()">確認討回</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closeRecoverModal()">取消</button>
+    </div>
+</div>
+
+<div id="delete-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="game-title" style="color: #ff7675;">🗑️ 刪除理由</div>
+        <div class="reason-box">請輸入刪除原因：</div>
+        <input type="text" id="delete-reason-input" class="modal-input" placeholder="">
+        <button class="modal-btn" style="background:#ff7675;" onclick="confirmDeleteReason()">下一步</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">取消</button>
+    </div>
+</div>
+
+<div id="promise-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="game-title" style="color: #fdcb6e;">🔥 最後確認</div>
+        <div class="reason-box" id="promise-msg">...</div>
+        <input type="text" id="promise-input" class="modal-input" placeholder="輸入：絕不再犯">
+        <button class="modal-btn" style="background:#fdcb6e; color:#2d3436;" onclick="confirmPromise()">開始驗證</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closePromiseModal()">取消</button>
     </div>
 </div>
 
 <div class="app-container">
-    <header>
-        <h2>許凱琳在前女友身上花多少錢</h2>
-        <div class="main-balance" id="stat-net">$0</div>
-        <div class="balance-label">目前實際虧損 (Net Loss)</div>
-        <div class="daily-quote" id="quote-text">載入中...</div>
-    </header>
+    
+    <div id="view-home" class="view-section active">
+        <header id="main-header">
+            <h2 id="app-title-display">前女友帳單</h2>
+            <div class="main-balance" id="stat-net">$0</div>
+            <div class="balance-label">實際虧損 (Net Loss)</div>
+            <div class="daily-quote" id="quote-text">...</div>
+        </header>
 
-    <div class="stats-card">
-        <div class="stat-item">
-            <div class="stat-title">總流出 (Out)</div>
-            <div class="stat-value val-red" id="stat-total">$0</div>
+        <div class="stats-card">
+            <div class="stat-item">
+                <div class="stat-title">總流出 (Out)</div>
+                <div class="stat-value val-red" id="stat-total">$0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-title">已討回 (Back)</div>
+                <div class="stat-value val-green" id="stat-recovered">$0</div>
+            </div>
         </div>
-        <div class="stat-item">
-            <div class="stat-title">已討回 (Back)</div>
-            <div class="stat-value val-green" id="stat-recovered">$0</div>
+
+        <div class="chart-section">
+            <div class="conversion-text" id="conversion-text">...</div>
+            
+            <div style="margin-bottom: 40px;">
+                <span class="chart-title" style="color: var(--accent-loss);">💸 總流出分佈</span>
+                <div class="chart-wrapper">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+
+            <div>
+                <span class="chart-title" style="color: var(--accent-gain);">💰 已討回分佈</span>
+                <div class="chart-wrapper">
+                    <canvas id="recoveredChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="chart-section">
-        <div class="conversion-text" id="conversion-text">保持清醒，錢包安全！</div>
-        <div class="chart-wrapper">
-            <canvas id="expenseChart"></canvas>
+    <div id="view-spent" class="view-section">
+        <header style="padding-bottom: 60px;">
+            <h2>新增支出</h2>
+            <div style="font-size:0.9rem; opacity:0.8; margin-top:5px;">又亂花了什麼？</div>
+        </header>
+        
+        <div class="input-section">
+            <div class="input-row">
+                <input type="text" id="item-name" placeholder="項目 (例: Switch)" autocomplete="off" style="flex:2;">
+                <input type="number" id="item-cost" placeholder="$ 金額" inputmode="numeric" style="flex:1.5;">
+            </div>
+            <div class="input-row">
+                <select id="item-category">
+                    <option value="飲食">🍔 飲食</option>
+                    <option value="禮物">🎁 禮物</option>
+                    <option value="生活">🏠 生活</option>
+                    <option value="交通">🚗 交通</option>
+                    <option value="娛樂">🎬 娛樂</option>
+                    <option value="借款">💸 借款</option>
+                    <option value="其他">💩 其他</option>
+                </select>
+            </div>
+            <button class="add-btn" id="add-btn">記上一筆</button>
+        </div>
+
+        <div class="list-section">
+            <div class="list-title">所有支出紀錄</div>
+            <ul id="spent-list"></ul>
         </div>
     </div>
 
-    <div class="input-section">
-        <div class="input-row">
-            <input type="text" id="item-name" placeholder="項目 (例: Switch)" autocomplete="off" style="flex:2;">
-            <input type="number" id="item-cost" placeholder="$ 金額" inputmode="numeric" style="flex:1.5;">
+    <div id="view-recovered" class="view-section">
+        <header class="green-mode">
+            <h2>討回戰績</h2>
+            <div class="main-balance" id="page-recovered-val" style="color: #ffffff;">$0</div>
+            <div class="balance-label">總共拿回來的血汗錢</div>
+        </header>
+
+        <div class="list-section" style="margin-top: 20px;">
+            <div class="list-title">成功回收項目</div>
+            <ul id="recovered-list"></ul>
         </div>
-        <div class="input-row">
-            <select id="item-category">
-                <option value="飲食">🍔 飲食</option>
-                <option value="禮物">🎁 禮物</option>
-                <option value="生活">🏠 生活</option>
-                <option value="交通">🚗 交通</option>
-                <option value="娛樂">🎬 娛樂</option>
-                <option value="借款">💸 借款</option>
-                <option value="其他">🤌 其他</option>
-            </select>
-        </div>
-        <button class="add-btn" id="add-btn">確認</button>
     </div>
 
-    <div class="list-section">
-        <div class="list-title">近期花錢紀錄</div>
-        <ul id="expense-list"></ul>
+    <div id="view-settings" class="view-section">
+        <header>
+            <h2>設定</h2>
+        </header>
+        <div class="list-section" style="margin-top: 20px;">
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label">修改標題</div>
+                        <div class="setting-desc">自訂上方顯示的名稱</div>
+                    </div>
+                    <button class="btn-normal" onclick="changeTitle()">修改</button>
+                </div>
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label">清除所有資料</div>
+                        <div class="setting-desc" style="color:#ff7675;">此操作無法復原</div>
+                    </div>
+                    <button class="btn-danger" onclick="clearAllData()">重置</button>
+                </div>
+            </div>
+        </div>
     </div>
+
 </div>
+
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>首頁</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('spent')">
+        <i class="fa-solid fa-receipt"></i>
+        <span>支出</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('recovered')">
+        <i class="fa-solid fa-hand-holding-dollar"></i>
+        <span>討回</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('settings')">
+        <i class="fa-solid fa-gear"></i>
+        <span>設定</span>
+    </div>
+</nav>
 
 <script>
     // --- 核心邏輯 ---
-    const quotes = ["投資自己，穩賺不賠。", 
+    let appTitle = localStorage.getItem('app_title') || "許凱琳在前女友身上花多少錢";
+    document.getElementById('app-title-display').textContent = appTitle;
+    document.title = appTitle;
+
+    const quotes = ["投資自己，穩賺不賠。",
                     "你值得被珍惜，不是被利用。", 
                     "別回頭，更好的人在前面。", 
                     "拒絕是你成熟的第一步。", 
@@ -317,68 +404,114 @@
     let expenses = JSON.parse(localStorage.getItem('ex_expenses_v3')) || [];
     expenses = expenses.map(e => ({ ...e, category: e.category || '其他', date: e.date || '過往', recovered: e.recovered || 0, isSettled: e.isSettled || false }));
 
-    const listEl = document.getElementById('expense-list');
-    const netEl = document.getElementById('stat-net');
-    const totalEl = document.getElementById('stat-total');
-    const recoveredEl = document.getElementById('stat-recovered');
-    const conversionEl = document.getElementById('conversion-text');
     let chartInstance = null;
-
+    let recoveredChartInstance = null;
     const catIcons = { "飲食": "🍔", "禮物": "🎁", "生活": "🏠", "交通": "🚗", "娛樂": "🎬", "借款": "💸", "其他": "💩" };
     const catColors = { "飲食": "#ffeaa7", "禮物": "#ff7675", "生活": "#74b9ff", "交通": "#a29bfe", "娛樂": "#fd79a8", "借款": "#55efc4", "其他": "#dfe6e9" };
 
+    window.switchTab = function(tabName) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${tabName}`).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        updateUI();
+    };
+
     function updateUI() {
-        listEl.innerHTML = '';
-        let total = 0, totalRecovered = 0, categoryTotals = {};
+        let total = 0, totalRecovered = 0, categoryTotals = {}, recoveredCategoryTotals = {};
         const categories = ["飲食", "禮物", "生活", "交通", "娛樂", "借款", "其他"];
-        categories.forEach(c => categoryTotals[c] = 0);
+        categories.forEach(c => { categoryTotals[c] = 0; recoveredCategoryTotals[c] = 0; });
+
+        // 1. 渲染支出列表
+        const spentListEl = document.getElementById('spent-list');
+        spentListEl.innerHTML = '';
+        if (expenses.length === 0) spentListEl.innerHTML = '<div class="empty-state">目前很清醒，沒有任何紀錄 ✨</div>';
 
         expenses.forEach((item, index) => {
             const cost = Number(item.cost), recovered = Number(item.recovered);
             total += cost; totalRecovered += recovered;
             categoryTotals[item.category] = (categoryTotals[item.category] || 0) + cost;
-            
+            if(recovered > 0) recoveredCategoryTotals[item.category] = (recoveredCategoryTotals[item.category] || 0) + recovered;
+
             const isFullySettled = recovered >= cost;
-            let priceHTML = `<div class="item-price ${isFullySettled ? 'settled' : ''}">$${cost.toLocaleString()}</div>`;
-            if(recovered > 0 && !isFullySettled) priceHTML += `<div style="font-size:0.7rem; color:#00b894;">+$${recovered.toLocaleString()}</div>`;
-
-            let btnsHTML = isFullySettled 
-                ? `<button class="btn-mini btn-settled">已結清</button> <button class="btn-mini btn-del" onclick="tryDeleteItem(${index})">✕</button>`
-                : `<button class="btn-mini btn-recover" onclick="recoverItem(${index})">討回</button> <button class="btn-mini btn-del" onclick="tryDeleteItem(${index})">刪除</button>`;
-
-            const iconBg = catColors[item.category] || "#dfe6e9";
-            const li = document.createElement('li');
-            li.className = isFullySettled ? 'is-settled' : '';
-            li.innerHTML = `
-                <div class="item-left">
-                    <div class="cat-icon" style="background:${iconBg}40; color:#2d3436;">${catIcons[item.category]||'💩'}</div>
-                    <div class="item-details">
-                        <span class="item-name">${item.name}</span>
-                        <span class="item-meta">${item.date} · ${item.category}</span>
-                    </div>
-                </div>
-                <div class="item-right">${priceHTML}<div class="action-btns">${btnsHTML}</div></div>
-            `;
-            listEl.appendChild(li);
+            const li = createExpenseItem(item, index, isFullySettled, cost, recovered);
+            spentListEl.appendChild(li);
         });
 
+        // 2. 渲染討回列表
+        const recoveredListEl = document.getElementById('recovered-list');
+        recoveredListEl.innerHTML = '';
+        const recoveredItems = expenses.filter(e => e.recovered > 0);
+        if (recoveredItems.length === 0) recoveredListEl.innerHTML = '<div class="empty-state">還沒討回任何錢，加油 💪</div>';
+        else {
+            recoveredItems.forEach(item => {
+                const li = document.createElement('li');
+                li.className = item.isSettled ? 'is-settled' : '';
+                const iconBg = catColors[item.category] || "#dfe6e9";
+                li.innerHTML = `
+                    <div class="item-left">
+                        <div class="cat-icon" style="background:${iconBg}40; color:#2d3436;">${catIcons[item.category]||'💩'}</div>
+                        <div class="item-details"><span class="item-name">${item.name}</span><span class="item-meta">拿回 / 總額</span></div>
+                    </div>
+                    <div class="item-right">
+                        <div class="item-price recovered-val" style="color:var(--accent-gain);">+$${item.recovered.toLocaleString()}</div>
+                        <div style="font-size:0.7rem; color:#b2bec3;">of $${item.cost.toLocaleString()}</div>
+                    </div>`;
+                recoveredListEl.appendChild(li);
+            });
+        }
+
+        // 3. 更新數據與雙圖表
         const netLoss = total - totalRecovered;
-        totalEl.textContent = `$${total.toLocaleString()}`;
-        recoveredEl.textContent = `$${totalRecovered.toLocaleString()}`;
-        netEl.textContent = `$${netLoss.toLocaleString()}`;
+        document.getElementById('stat-net').textContent = `$${netLoss.toLocaleString()}`;
+        document.getElementById('stat-total').textContent = `$${total.toLocaleString()}`;
+        document.getElementById('stat-recovered').textContent = `$${totalRecovered.toLocaleString()}`;
+        document.getElementById('page-recovered-val').textContent = `$${totalRecovered.toLocaleString()}`;
+
+        // [新增] 綠色模式邏輯：當 netLoss <= 0 且有記錄時
+        const mainHeader = document.getElementById('main-header');
+        const navContainer = document.querySelector('.bottom-nav');
+        
+        if (netLoss <= 0 && expenses.length > 0) {
+            mainHeader.classList.add('green-mode');
+            navContainer.classList.add('green-mode');
+        } else {
+            mainHeader.classList.remove('green-mode');
+            navContainer.classList.remove('green-mode');
+        }
+
         updateConversion(netLoss);
         updateChart(categoryTotals, netLoss);
+        updateRecoveredChart(recoveredCategoryTotals, totalRecovered);
         localStorage.setItem('ex_expenses_v3', JSON.stringify(expenses));
     }
 
+    function createExpenseItem(item, index, isFullySettled, cost, recovered) {
+        const li = document.createElement('li');
+        li.className = isFullySettled ? 'is-settled' : '';
+        let priceHTML = `<div class="item-price ${isFullySettled ? 'settled' : ''}">$${cost.toLocaleString()}</div>`;
+        if(recovered > 0 && !isFullySettled) priceHTML += `<div style="font-size:0.7rem; color:#00b894;">+$${recovered.toLocaleString()}</div>`;
+        let btnsHTML = isFullySettled 
+            ? `<button class="btn-mini btn-settled">已結清</button> <button class="btn-mini btn-del" onclick="openDeleteModal(${index})">✕</button>`
+            : `<button class="btn-mini btn-recover" onclick="openRecoverModal(${index})">討回</button> <button class="btn-mini btn-del" onclick="openDeleteModal(${index})">刪除</button>`;
+        const iconBg = catColors[item.category] || "#dfe6e9";
+        li.innerHTML = `
+            <div class="item-left">
+                <div class="cat-icon" style="background:${iconBg}40; color:#2d3436;">${catIcons[item.category]||'💩'}</div>
+                <div class="item-details"><span class="item-name">${item.name}</span><span class="item-meta">${item.date} · ${item.category}</span></div>
+            </div>
+            <div class="item-right">${priceHTML}<div class="action-btns">${btnsHTML}</div></div>`;
+        return li;
+    }
+
     function updateConversion(net) {
-        let text = "保持清醒，錢包安全！";
-        if (net <= 0 && expenses.length > 0) text = "錢都拿回來了別再浪費了！";
-        else if (net > 0) text = `這筆錢可買 ${(net/150).toFixed(0)} 杯星巴克`;
-        if (net > 5000) text = `夠買廉航機票飛日本了`;
-        if (net > 15000) text = `夠買一台 iPad Air 了`;
-        if (net > 30000) text = `你浪費了一台筆電的錢`;
-        conversionEl.textContent = text;
+        const el = document.getElementById('conversion-text');
+        if (net <= 0 && expenses.length > 0) el.textContent = "太強了！錢都拿回來了！👏";
+        else if (net > 0) el.textContent = `虧損可買 ${(net/150).toFixed(0)} 杯星巴克 ☕`;
+        else el.textContent = "保持清醒，錢包安全！";
+        if (net > 5000) el.textContent = `夠買廉航機票飛日本了 ✈️`;
+        if (net > 15000) el.textContent = `夠買一台 iPad Air 了 📱`;
+        if (net > 30000) el.textContent = `你浪費了一台高階筆電 💻`;
     }
 
     function updateChart(dataMap, netAmount) {
@@ -387,9 +520,23 @@
         if (netAmount <= 0 && expenses.length > 0) { labels = ["恭喜無虧損"]; dataValues = [1]; bgColors = ["#00b894"]; }
         else if (expenses.length === 0) { labels = ["尚無紀錄"]; dataValues = [1]; bgColors = ["#f1f2f6"]; }
         else { labels = Object.keys(dataMap); dataValues = Object.values(dataMap); bgColors = ['#ff7675', '#74b9ff', '#ffeaa7', '#a29bfe', '#fd79a8', '#55efc4', '#636e72']; }
-
+        
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+        });
+    }
+
+    function updateRecoveredChart(dataMap, totalRecovered) {
+        const ctx = document.getElementById('recoveredChart').getContext('2d');
+        let labels = [], dataValues = [], bgColors = [];
+        if (totalRecovered === 0) { labels = ["尚未討回"]; dataValues = [1]; bgColors = ["#f1f2f6"]; }
+        else { labels = Object.keys(dataMap); dataValues = Object.values(dataMap); bgColors = ['#ff7675', '#74b9ff', '#ffeaa7', '#a29bfe', '#fd79a8', '#55efc4', '#636e72']; }
+        
+        if (recoveredChartInstance) recoveredChartInstance.destroy();
+        recoveredChartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: { labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
@@ -407,76 +554,152 @@
         updateUI();
     });
 
-    window.recoverItem = function(index) {
-        const item = expenses[index];
-        const remaining = item.cost - item.recovered;
-        const input = prompt(`「${item.name}」拿回多少錢？`, remaining);
-        if (input !== null) {
-            const amount = parseInt(input);
-            if (!isNaN(amount) && amount > 0) {
-                expenses[index].recovered += amount;
-                if (expenses[index].recovered >= expenses[index].cost) { expenses[index].isSettled = true; alert("🎉 恭喜結清！"); }
-                updateUI();
-            }
-        }
-    };
-
-    let pendingDeleteIndex = -1, gameStage = 0, currentAnswer = "";
-    const gameModal = document.getElementById('game-modal');
-    const qLabel = document.getElementById('q-type-label'), qContent = document.getElementById('q-content');
-    const gameInput = document.getElementById('game-answer'), progressText = document.getElementById('q-progress');
-    const displayReasonEl = document.getElementById('display-reason'), dots = document.querySelectorAll('.dot');
-
-    window.tryDeleteItem = function(index) {
-        const reason = prompt("刪除理由是？");
-        if (!reason || !reason.trim()) { alert("❌ 請輸入理由"); return; }
-        const confirmText = prompt(`理由：「${reason}」\n若屬實，輸入「絕不再犯」確認：`);
-        if (confirmText === "絕不再犯") {
-            pendingDeleteIndex = index; gameStage = 0;
-            displayReasonEl.textContent = `理由：${reason}`; 
-            updateDots(); generateRandomQuestion();
-            gameModal.style.display = 'flex';
-            setTimeout(() => { gameInput.focus(); }, 100);
-            
-        } else { alert("❌ 決心不足"); }
-    };
-
-    function generateRandomQuestion() {
-        const types = ['math_eq', 'math_op', 'reverse', 'logic_seq'];
-        const type = types[Math.floor(Math.random() * types.length)];
-        gameInput.value = ''; progressText.textContent = `${gameStage + 1}/5`;
-
-        if (type === 'math_eq') {
-            qLabel.textContent = "求解 x"; const x = Math.floor(Math.random()*9)+2, a = Math.floor(Math.random()*8)+2, b = Math.floor(Math.random()*19)+1;
-            qContent.textContent = `${a}x + ${b} = ${(a*x)+b}`; currentAnswer = x.toString();
-        } else if (type === 'math_op') {
-            qLabel.textContent = "先乘除後加減"; const a = Math.floor(Math.random()*20)+1, b = Math.floor(Math.random()*8)+2, c = Math.floor(Math.random()*8)+2;
-            qContent.textContent = `${a} + ${b} × ${c} = ?`; currentAnswer = (a+b*c).toString();
-        } else if (type === 'reverse') {
-            qLabel.textContent = "修正這句話"; const p = ["回頭是岸","及時止損","愛惜自己","不再犯賤","保持清醒"];
-            const phrase = p[Math.floor(Math.random()*p.length)];
-            qContent.textContent = phrase.split("").reverse().join(""); currentAnswer = phrase;
-        } else if (type === 'logic_seq') {
-            qLabel.textContent = "下個數字？"; const s = Math.floor(Math.random()*3)+1;
-            qContent.textContent = `${s}, ${s+2}, ${s+4}, ?`; currentAnswer = (s+6).toString();
+    window.changeTitle = function() {
+        const newTitle = prompt("請輸入新的標題：", appTitle);
+        if(newTitle && newTitle.trim() !== "") {
+            appTitle = newTitle; localStorage.setItem('app_title', appTitle);
+            document.getElementById('app-title-display').textContent = appTitle; document.title = appTitle;
+            alert("標題已更新！");
         }
     }
 
+    window.clearAllData = function() {
+        if(confirm("⚠️ 警告：這將會刪除所有紀錄，確定嗎？")) {
+            const doubleCheck = prompt("請輸入「確認刪除」四個字：");
+            if(doubleCheck === "確認刪除") {
+                expenses = []; localStorage.removeItem('ex_expenses_v3');
+                updateUI(); alert("資料已重置");
+            }
+        }
+    }
+
+    // Modals & Logic
+    let currentActionIndex = -1, tempDeleteReason = "";
+    
+    // Recover Flow
+    const recoverModal = document.getElementById('recover-modal'), recoverInput = document.getElementById('recover-input'), recoverMsg = document.getElementById('recover-msg');
+    window.openRecoverModal = function(index) {
+        currentActionIndex = index; const item = expenses[index]; const remaining = item.cost - item.recovered;
+        recoverMsg.textContent = `「${item.name}」還差 $${remaining.toLocaleString()}，這次拿回多少？`;
+        recoverInput.value = remaining; recoverModal.style.display = 'flex'; setTimeout(() => recoverInput.focus(), 100);
+    };
+    window.closeRecoverModal = function() { recoverModal.style.display = 'none'; };
+    window.confirmRecover = function() {
+        const amount = parseInt(recoverInput.value);
+        if (!isNaN(amount) && amount > 0) {
+            expenses[currentActionIndex].recovered += amount;
+            if (expenses[currentActionIndex].recovered >= expenses[currentActionIndex].cost) { expenses[currentActionIndex].isSettled = true; alert("🎉 恭喜結清！"); }
+            updateUI(); closeRecoverModal();
+        } else { alert("請輸入有效金額"); }
+    };
+
+    // Delete Flow
+    const deleteModal = document.getElementById('delete-modal'), deleteReasonInput = document.getElementById('delete-reason-input');
+    window.openDeleteModal = function(index) {
+        currentActionIndex = index; deleteReasonInput.value = ''; deleteModal.style.display = 'flex'; setTimeout(() => deleteReasonInput.focus(), 100);
+    };
+    window.closeDeleteModal = function() { deleteModal.style.display = 'none'; };
+    window.confirmDeleteReason = function() {
+        const reason = deleteReasonInput.value.trim();
+        if (!reason) { alert("❌ 請輸入理由"); return; }
+        tempDeleteReason = reason; closeDeleteModal(); openPromiseModal(); 
+    };
+
+    // Promise Flow
+    const promiseModal = document.getElementById('promise-modal'), promiseInput = document.getElementById('promise-input'), promiseMsg = document.getElementById('promise-msg');
+    window.openPromiseModal = function() {
+        promiseMsg.innerHTML = `理由：「${tempDeleteReason}」<br>若屬實，輸入「絕不再犯」：`;
+        promiseInput.value = ''; promiseModal.style.display = 'flex'; setTimeout(() => promiseInput.focus(), 100);
+    };
+    window.closePromiseModal = function() { promiseModal.style.display = 'none'; };
+    window.confirmPromise = function() {
+        if (promiseInput.value === "絕不再犯") { closePromiseModal(); openGameModal(); } 
+        else { alert("看來妳還沒下定決心不要再犯"); }
+    };
+
+    // Game Logic
+    let gameStage = 0, currentGameQueue = [];
+    const gameModal = document.getElementById('game-modal'), qLabel = document.getElementById('q-type-label'), qContent = document.getElementById('q-content');
+    const gameInput = document.getElementById('game-answer'), progressText = document.getElementById('q-progress');
+    const displayReasonEl = document.getElementById('display-reason'), dots = document.querySelectorAll('.dot');
+    
+    const phrases = ["回頭是岸", 
+                     "及時止損", 
+                     "愛惜自己", 
+                     "不再犯賤", 
+                     "保持清醒", 
+                     "拒絕勒索", 
+                     "我是最棒的", 
+                     "下一個更好", 
+                     "遠離渣渣", 
+                     "單身萬歲", 
+                     "錢要自己花", 
+                     "腦袋要清楚", 
+                     "別當提款機", 
+                     "舊的不去，新的不來"];
+
+    function shuffleString(str) {
+        const arr = str.split('');
+        for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+        if (arr.join('') === str && arr.length > 1) { [arr[0], arr[1]] = [arr[1], arr[0]]; }
+        return arr.join('');
+    }
+
+    window.openGameModal = function() {
+        gameStage = 0; displayReasonEl.textContent = `刪除理由：${tempDeleteReason}`;
+        generateGameQueue(); loadCurrentQuestion(); updateDots();
+        gameModal.style.display = 'flex'; setTimeout(() => gameInput.focus(), 100);
+    };
+
+    function generateGameQueue() {
+        currentGameQueue = [];
+        let tempPhrases = [...phrases];
+        for(let i=0; i<5; i++) {
+            const types = ['math_eq', 'math_op', 'text_scramble', 'text_scramble', 'logic_seq'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            let qData = {};
+            if (type === 'math_eq') {
+                const x = Math.floor(Math.random()*9)+2, a = Math.floor(Math.random()*8)+2, b = Math.floor(Math.random()*19)+1;
+                qData = { label: "求解 x", content: `${a}x + ${b} = ${(a*x)+b}`, answer: x.toString() };
+            } else if (type === 'math_op') {
+                const a = Math.floor(Math.random()*20)+1, b = Math.floor(Math.random()*8)+2, c = Math.floor(Math.random()*8)+2;
+                qData = { label: "先乘除後加減", content: `${a} + ${b} × ${c} = ?`, answer: (a+b*c).toString() };
+            } else if (type === 'text_scramble') {
+                if (tempPhrases.length === 0) tempPhrases = [...phrases];
+                const pIndex = Math.floor(Math.random() * tempPhrases.length);
+                const phrase = tempPhrases[pIndex];
+                tempPhrases.splice(pIndex, 1);
+                qData = { label: "請重組正確句子", content: shuffleString(phrase), answer: phrase };
+            } else if (type === 'logic_seq') {
+                const s = Math.floor(Math.random()*3)+1;
+                qData = { label: "下個數字？", content: `${s}, ${s+2}, ${s+4}, ?`, answer: (s+6).toString() };
+            }
+            currentGameQueue.push(qData);
+        }
+    }
+
+    function loadCurrentQuestion() {
+        const q = currentGameQueue[gameStage];
+        qLabel.textContent = q.label; qContent.textContent = q.content;
+        gameInput.value = ''; progressText.textContent = `${gameStage + 1}/5`;
+    }
+
     window.checkGameAnswer = function() {
-        if (gameInput.value.trim() === currentAnswer) {
+        const currentQ = currentGameQueue[gameStage];
+        if (gameInput.value.trim() === currentQ.answer) {
             gameStage++; updateDots();
             if (gameStage >= 5) {
-                alert("驗證通過，不要再花錢在她身上啦"); expenses.splice(pendingDeleteIndex, 1); updateUI();
-                gameModal.style.display = 'none'; pendingDeleteIndex = -1;
-            } else { generateRandomQuestion(); }
+                alert("🎉 驗證通過"); expenses.splice(currentActionIndex, 1); updateUI(); gameModal.style.display = 'none';
+            } else { loadCurrentQuestion(); }
         } else {
-            alert(`❌ 錯了！答案是 ${currentAnswer}，重來！`); gameModal.style.display = 'none';
+            alert(`❌ 錯了！正確答案是：${currentQ.answer}\n\n看來你的大腦還不清醒，請重新來過！`); gameModal.style.display = 'none';
         }
     };
     function updateDots() { dots.forEach((d, i) => d.className = i < gameStage ? 'dot active' : 'dot'); }
     gameInput.addEventListener("keypress", (e) => { if(e.key==="Enter") checkGameAnswer(); });
 
     updateUI();
+    document.querySelector('.nav-item').classList.add('active');
 </script>
 </body>
 </html>
