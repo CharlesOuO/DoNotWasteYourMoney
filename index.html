@@ -8,208 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style>
-        :root {
-            --primary-bg: #f5f5f5;
-            --header-bg: #ff5e57; /* 預設紅色 (虧損) */
-            --header-text: #ffffff;
-            --card-bg: #ffffff;
-            --text-main: #2d3436;
-            --text-sub: #636e72;
-            --accent-loss: #ff5e57;
-            --accent-gain: #00b894; /* 獲利/止損綠色 */
-            --border-radius: 16px;
-            --nav-height: 70px;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--primary-bg);
-            position: relative;
-            padding-bottom: calc(var(--nav-height) + 20px);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* --- Header --- */
-        header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
-            padding: 40px 20px 60px;
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(255, 94, 87, 0.3);
-            flex-shrink: 0;
-            transition: all 0.5s ease; /* 平滑過渡效果 */
-        }
-        
-        /* 當虧損 <= 0 時的綠色模式 */
-        header.green-mode { 
-            background-color: var(--accent-gain); 
-            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3); 
-        }
-
-        h2 { margin: 0; font-size: 1.1rem; font-weight: 500; opacity: 0.9; cursor: pointer; }
-        .main-balance { font-size: 3rem; font-weight: 700; margin: 10px 0 5px; font-family: 'Roboto Mono', monospace; }
-        .balance-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 10px; }
-        .daily-quote { background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; backdrop-filter: blur(5px); }
-
-        /* --- Views --- */
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- Components --- */
-        .stats-card {
-            background: var(--card-bg); margin: -50px 20px 20px; padding: 20px;
-            border-radius: var(--border-radius); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; z-index: 10;
-        }
-        .stat-item { text-align: center; position: relative; }
-        .stat-item:first-child::after { content: ''; position: absolute; right: -10px; top: 15%; height: 70%; width: 1px; background: #eee; }
-        .stat-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 5px; }
-        .stat-value { font-size: 1.2rem; font-weight: 700; }
-        .val-red { color: var(--accent-loss); }
-        .val-green { color: var(--accent-gain); }
-
-        .chart-section {
-            background: var(--card-bg); margin: 0 20px 20px; padding: 25px 20px;
-            border-radius: var(--border-radius); box-shadow: 0 2px 10px rgba(0,0,0,0.02); text-align: center;
-        }
-        .chart-wrapper { height: 220px; position: relative; margin-bottom: 10px; }
-        .conversion-text { color: var(--accent-gain); font-weight: bold; margin-bottom: 25px; font-size: 0.95rem; }
-        
-        .chart-title { font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; display: block; }
-
-        .input-section {
-            background: var(--card-bg); margin: -40px 20px 20px; padding: 20px;
-            border-radius: var(--border-radius); box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            position: relative; z-index: 10;
-        }
-        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        input, select {
-            width: 100%; padding: 12px 15px; border: 2px solid #f1f2f6; border-radius: 12px;
-            font-size: 1rem; background: #f1f2f6; color: var(--text-main); transition: all 0.2s; font-family: inherit;
-        }
-        input:focus, select:focus { outline: none; background: #fff; border-color: var(--header-bg); }
-        .add-btn {
-            width: 100%; padding: 15px; background: var(--header-bg); color: white; border: none;
-            border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 94, 87, 0.3); transition: transform 0.1s;
-        }
-        .add-btn:active { transform: scale(0.98); }
-
-        .list-section { padding: 0 20px; }
-        .list-title { font-size: 0.9rem; color: var(--text-sub); margin-bottom: 10px; padding-left: 5px; }
-        .empty-state { text-align: center; padding: 40px 0; color: #b2bec3; font-size: 0.9rem; }
-        
-        ul { list-style: none; padding: 0; margin: 0; }
-        li {
-            background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-radius: 12px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.3s;
-        }
-        li.is-settled { opacity: 0.6; background: #f9f9f9; }
-        li.is-settled .item-name { text-decoration: line-through; }
-
-        .item-left { display: flex; align-items: center; gap: 12px; }
-        .cat-icon { 
-            width: 40px; height: 40px; background: #ffeaa7; color: #fdcb6e; 
-            border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-size: 1.2rem; flex-shrink: 0;
-        }
-        .item-details { display: flex; flex-direction: column; }
-        .item-name { font-weight: 500; font-size: 1rem; margin-bottom: 2px; }
-        .item-meta { font-size: 0.75rem; color: #b2bec3; }
-
-        .item-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-        .item-price { font-weight: 700; font-size: 1.1rem; color: var(--accent-loss); font-family: 'Roboto Mono', monospace; }
-        .item-price.recovered-val { color: var(--accent-gain); }
-        .item-price.settled { color: #b2bec3; text-decoration: line-through; }
-        
-        .action-btns { display: flex; gap: 8px; }
-        .btn-mini {
-            padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; border: none; cursor: pointer; font-weight: 500;
-        }
-        .btn-recover { background: rgba(0, 184, 148, 0.1); color: var(--accent-gain); }
-        .btn-del { background: rgba(255, 94, 87, 0.1); color: var(--accent-loss); }
-        .btn-settled { background: #eee; color: #999; cursor: default; }
-
-        /* --- Settings Page --- */
-        .settings-list { margin-top: -20px; }
-        .setting-item {
-            background: #fff; padding: 20px; margin-bottom: 15px; border-radius: 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .setting-label { font-weight: 500; }
-        .setting-desc { font-size: 0.8rem; color: #999; margin-top: 5px; }
-        .btn-danger { background: #ff7675; color: white; border:none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .btn-normal { background: #0984e3; color: white; border:none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-
-        /* --- Bottom Navigation --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
-            background: #ffffff; border-top: 1px solid #eee;
-            display: flex; justify-content: space-around; align-items: center;
-            z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #b2bec3; text-decoration: none; font-size: 0.75rem; flex: 1; height: 100%;
-            cursor: pointer; transition: color 0.2s;
-        }
-        .nav-item i { font-size: 1.4rem; margin-bottom: 5px; }
-        /* 預設選中顏色 */
-        .nav-item.active { color: var(--header-bg); }
-        /* 綠色模式下的選中顏色 */
-        .green-mode .nav-item.active { color: var(--accent-gain); }
-
-        /* --- Modals --- */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(45, 52, 54, 0.95); z-index: 9999;
-            justify-content: center; align-items: center; flex-direction: column; padding: 20px;
-        }
-        .modal-box {
-            background: #2d3436; border: 1px solid #636e72; color: #dfe6e9;
-            padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(0); transition: transform 0.3s;
-        }
-        .game-title { font-size: 1.2rem; color: #fab1a0; margin-bottom: 10px; font-weight: bold; }
-        .q-content { font-size: 1.8rem; font-family: 'Roboto Mono', monospace; font-weight: bold; color: #fff; margin: 20px 0; letter-spacing: 3px; }
-        .modal-input { 
-            background: #ffffff !important; border: 3px solid #00b894 !important; color: #2d3436 !important; 
-            text-align: center; padding: 15px; font-size: 1.2rem; border-radius: 12px; width: 100%; margin-bottom: 15px;
-            font-family: 'Noto Sans TC', monospace;
-        }
-        .modal-btn { 
-            background: #00b894; color: white; border: none; padding: 12px; border-radius: 10px; 
-            width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s;
-        }
-        .modal-btn:active { background: #00a884; }
-        .modal-btn-cancel { background: #636e72; margin-top: 10px; }
-        .dot { width: 8px; height: 8px; background: #636e72; border-radius: 50%; display: inline-block; margin: 0 4px; }
-        .dot.active { background: #00b894; transform: scale(1.3); }
-        .reason-box { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; color: #b2bec3; }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -221,7 +20,9 @@
         <div class="q-content" id="q-content">...</div>
         <input type="text" id="game-answer" class="modal-input" placeholder="答案" autocomplete="off">
         <button class="modal-btn" onclick="checkGameAnswer()">送出答案</button>
-        <div style="margin-top:20px;"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div style="margin-top:20px;">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
     </div>
 </div>
 
@@ -259,7 +60,7 @@
     
     <div id="view-home" class="view-section active">
         <header id="main-header">
-            <h2 id="app-title-display">前女友帳單</h2>
+            <h2 id="app-title-display" onclick="changeTitle()">前女友帳單 <i class="fa-solid fa-pen" style="font-size:0.8rem; opacity:0.5;"></i></h2>
             <div class="main-balance" id="stat-net">$0</div>
             <div class="balance-label">實際虧損 (Net Loss)</div>
             <div class="daily-quote" id="quote-text">...</div>
@@ -341,23 +142,51 @@
 
     <div id="view-settings" class="view-section">
         <header>
-            <h2>設定</h2>
+            <h2>設定 & 備份</h2>
         </header>
         <div class="list-section" style="margin-top: 20px;">
             <div class="settings-list">
                 <div class="setting-item">
                     <div>
-                        <div class="setting-label">修改標題</div>
-                        <div class="setting-desc">自訂上方顯示的名稱</div>
+                        <div class="setting-label">複製文字戰績</div>
+                        <div class="setting-desc">產生一段文字貼文</div>
                     </div>
-                    <button class="btn-normal" onclick="changeTitle()">修改</button>
+                    <button class="btn-common btn-share" onclick="shareStats()"><i class="fa-solid fa-copy"></i> 複製</button>
                 </div>
+
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label">匯出備份 (Backup)</div>
+                        <div class="setting-desc">下載 JSON 檔案保存資料</div>
+                    </div>
+                    <button class="btn-common btn-normal" onclick="exportData()"><i class="fa-solid fa-download"></i> 下載</button>
+                </div>
+
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label">匯入備份 (Restore)</div>
+                        <div class="setting-desc">讀取之前的備份檔案</div>
+                    </div>
+                    <label class="btn-common btn-normal">
+                        <i class="fa-solid fa-upload"></i> 匯入
+                        <input type="file" id="import-file" style="display:none;" onchange="importData(this)">
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div>
+                        <div class="setting-label">修改標題</div>
+                        <div class="setting-desc">自訂 App 名稱</div>
+                    </div>
+                    <button class="btn-common btn-normal" onclick="changeTitle()">修改</button>
+                </div>
+
                 <div class="setting-item">
                     <div>
                         <div class="setting-label">清除所有資料</div>
                         <div class="setting-desc" style="color:#ff7675;">此操作無法復原</div>
                     </div>
-                    <button class="btn-danger" onclick="clearAllData()">重置</button>
+                    <button class="btn-common btn-danger" onclick="clearAllData()">重置</button>
                 </div>
             </div>
         </div>
@@ -384,322 +213,7 @@
     </div>
 </nav>
 
-<script>
-    // --- 核心邏輯 ---
-    let appTitle = localStorage.getItem('app_title') || "許凱琳在前女友身上花多少錢";
-    document.getElementById('app-title-display').textContent = appTitle;
-    document.title = appTitle;
+<script src="script.js"></script>
 
-    const quotes = ["投資自己，穩賺不賠。",
-                    "你值得被珍惜，不是被利用。", 
-                    "別回頭，更好的人在前面。", 
-                    "拒絕是你成熟的第一步。", 
-                    "單身代表你終於自由了。", 
-                    "不要做廉價的提款機。", 
-                    "刪除紀錄不代表沒發生過。", 
-                    "別讓回憶成為你的負債。", 
-                    "拿回一塊錢，就是贏一塊錢。"];
-    document.getElementById('quote-text').textContent = quotes[Math.floor(Math.random() * quotes.length)];
-
-    let expenses = JSON.parse(localStorage.getItem('ex_expenses_v3')) || [];
-    expenses = expenses.map(e => ({ ...e, category: e.category || '其他', date: e.date || '過往', recovered: e.recovered || 0, isSettled: e.isSettled || false }));
-
-    let chartInstance = null;
-    let recoveredChartInstance = null;
-    const catIcons = { "飲食": "🍔", "禮物": "🎁", "生活": "🏠", "交通": "🚗", "娛樂": "🎬", "借款": "💸", "其他": "💩" };
-    const catColors = { "飲食": "#ffeaa7", "禮物": "#ff7675", "生活": "#74b9ff", "交通": "#a29bfe", "娛樂": "#fd79a8", "借款": "#55efc4", "其他": "#dfe6e9" };
-
-    window.switchTab = function(tabName) {
-        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-        document.getElementById(`view-${tabName}`).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        updateUI();
-    };
-
-    function updateUI() {
-        let total = 0, totalRecovered = 0, categoryTotals = {}, recoveredCategoryTotals = {};
-        const categories = ["飲食", "禮物", "生活", "交通", "娛樂", "借款", "其他"];
-        categories.forEach(c => { categoryTotals[c] = 0; recoveredCategoryTotals[c] = 0; });
-
-        // 1. 渲染支出列表
-        const spentListEl = document.getElementById('spent-list');
-        spentListEl.innerHTML = '';
-        if (expenses.length === 0) spentListEl.innerHTML = '<div class="empty-state">目前很清醒，沒有任何紀錄 ✨</div>';
-
-        expenses.forEach((item, index) => {
-            const cost = Number(item.cost), recovered = Number(item.recovered);
-            total += cost; totalRecovered += recovered;
-            categoryTotals[item.category] = (categoryTotals[item.category] || 0) + cost;
-            if(recovered > 0) recoveredCategoryTotals[item.category] = (recoveredCategoryTotals[item.category] || 0) + recovered;
-
-            const isFullySettled = recovered >= cost;
-            const li = createExpenseItem(item, index, isFullySettled, cost, recovered);
-            spentListEl.appendChild(li);
-        });
-
-        // 2. 渲染討回列表
-        const recoveredListEl = document.getElementById('recovered-list');
-        recoveredListEl.innerHTML = '';
-        const recoveredItems = expenses.filter(e => e.recovered > 0);
-        if (recoveredItems.length === 0) recoveredListEl.innerHTML = '<div class="empty-state">還沒討回任何錢，加油 💪</div>';
-        else {
-            recoveredItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = item.isSettled ? 'is-settled' : '';
-                const iconBg = catColors[item.category] || "#dfe6e9";
-                li.innerHTML = `
-                    <div class="item-left">
-                        <div class="cat-icon" style="background:${iconBg}40; color:#2d3436;">${catIcons[item.category]||'💩'}</div>
-                        <div class="item-details"><span class="item-name">${item.name}</span><span class="item-meta">拿回 / 總額</span></div>
-                    </div>
-                    <div class="item-right">
-                        <div class="item-price recovered-val" style="color:var(--accent-gain);">+$${item.recovered.toLocaleString()}</div>
-                        <div style="font-size:0.7rem; color:#b2bec3;">of $${item.cost.toLocaleString()}</div>
-                    </div>`;
-                recoveredListEl.appendChild(li);
-            });
-        }
-
-        // 3. 更新數據與雙圖表
-        const netLoss = total - totalRecovered;
-        document.getElementById('stat-net').textContent = `$${netLoss.toLocaleString()}`;
-        document.getElementById('stat-total').textContent = `$${total.toLocaleString()}`;
-        document.getElementById('stat-recovered').textContent = `$${totalRecovered.toLocaleString()}`;
-        document.getElementById('page-recovered-val').textContent = `$${totalRecovered.toLocaleString()}`;
-
-        // [新增] 綠色模式邏輯：當 netLoss <= 0 且有記錄時
-        const mainHeader = document.getElementById('main-header');
-        const navContainer = document.querySelector('.bottom-nav');
-        
-        if (netLoss <= 0 && expenses.length > 0) {
-            mainHeader.classList.add('green-mode');
-            navContainer.classList.add('green-mode');
-        } else {
-            mainHeader.classList.remove('green-mode');
-            navContainer.classList.remove('green-mode');
-        }
-
-        updateConversion(netLoss);
-        updateChart(categoryTotals, netLoss);
-        updateRecoveredChart(recoveredCategoryTotals, totalRecovered);
-        localStorage.setItem('ex_expenses_v3', JSON.stringify(expenses));
-    }
-
-    function createExpenseItem(item, index, isFullySettled, cost, recovered) {
-        const li = document.createElement('li');
-        li.className = isFullySettled ? 'is-settled' : '';
-        let priceHTML = `<div class="item-price ${isFullySettled ? 'settled' : ''}">$${cost.toLocaleString()}</div>`;
-        if(recovered > 0 && !isFullySettled) priceHTML += `<div style="font-size:0.7rem; color:#00b894;">+$${recovered.toLocaleString()}</div>`;
-        let btnsHTML = isFullySettled 
-            ? `<button class="btn-mini btn-settled">已結清</button> <button class="btn-mini btn-del" onclick="openDeleteModal(${index})">✕</button>`
-            : `<button class="btn-mini btn-recover" onclick="openRecoverModal(${index})">討回</button> <button class="btn-mini btn-del" onclick="openDeleteModal(${index})">刪除</button>`;
-        const iconBg = catColors[item.category] || "#dfe6e9";
-        li.innerHTML = `
-            <div class="item-left">
-                <div class="cat-icon" style="background:${iconBg}40; color:#2d3436;">${catIcons[item.category]||'💩'}</div>
-                <div class="item-details"><span class="item-name">${item.name}</span><span class="item-meta">${item.date} · ${item.category}</span></div>
-            </div>
-            <div class="item-right">${priceHTML}<div class="action-btns">${btnsHTML}</div></div>`;
-        return li;
-    }
-
-    function updateConversion(net) {
-        const el = document.getElementById('conversion-text');
-        if (net <= 0 && expenses.length > 0) el.textContent = "太強了！錢都拿回來了！👏";
-        else if (net > 0) el.textContent = `虧損可買 ${(net/150).toFixed(0)} 杯星巴克 ☕`;
-        else el.textContent = "保持清醒，錢包安全！";
-        if (net > 5000) el.textContent = `夠買廉航機票飛日本了 ✈️`;
-        if (net > 15000) el.textContent = `夠買一台 iPad Air 了 📱`;
-        if (net > 30000) el.textContent = `你浪費了一台高階筆電 💻`;
-    }
-
-    function updateChart(dataMap, netAmount) {
-        const ctx = document.getElementById('expenseChart').getContext('2d');
-        let labels = [], dataValues = [], bgColors = [];
-        if (netAmount <= 0 && expenses.length > 0) { labels = ["恭喜無虧損"]; dataValues = [1]; bgColors = ["#00b894"]; }
-        else if (expenses.length === 0) { labels = ["尚無紀錄"]; dataValues = [1]; bgColors = ["#f1f2f6"]; }
-        else { labels = Object.keys(dataMap); dataValues = Object.values(dataMap); bgColors = ['#ff7675', '#74b9ff', '#ffeaa7', '#a29bfe', '#fd79a8', '#55efc4', '#636e72']; }
-        
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
-        });
-    }
-
-    function updateRecoveredChart(dataMap, totalRecovered) {
-        const ctx = document.getElementById('recoveredChart').getContext('2d');
-        let labels = [], dataValues = [], bgColors = [];
-        if (totalRecovered === 0) { labels = ["尚未討回"]; dataValues = [1]; bgColors = ["#f1f2f6"]; }
-        else { labels = Object.keys(dataMap); dataValues = Object.values(dataMap); bgColors = ['#ff7675', '#74b9ff', '#ffeaa7', '#a29bfe', '#fd79a8', '#55efc4', '#636e72']; }
-        
-        if (recoveredChartInstance) recoveredChartInstance.destroy();
-        recoveredChartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
-        });
-    }
-
-    document.getElementById('add-btn').addEventListener('click', () => {
-        const name = document.getElementById('item-name').value.trim();
-        const cost = document.getElementById('item-cost').value;
-        const category = document.getElementById('item-category').value;
-        if (!name || !cost) { alert('請輸入項目與金額'); return; }
-        const today = new Date();
-        expenses.unshift({ name, cost, category, date: `${today.getMonth()+1}/${today.getDate()}`, recovered: 0, isSettled: false });
-        document.getElementById('item-name').value = ''; document.getElementById('item-cost').value = '';
-        updateUI();
-    });
-
-    window.changeTitle = function() {
-        const newTitle = prompt("請輸入新的標題：", appTitle);
-        if(newTitle && newTitle.trim() !== "") {
-            appTitle = newTitle; localStorage.setItem('app_title', appTitle);
-            document.getElementById('app-title-display').textContent = appTitle; document.title = appTitle;
-            alert("標題已更新！");
-        }
-    }
-
-    window.clearAllData = function() {
-        if(confirm("⚠️ 警告：這將會刪除所有紀錄，確定嗎？")) {
-            const doubleCheck = prompt("請輸入「確認刪除」四個字：");
-            if(doubleCheck === "確認刪除") {
-                expenses = []; localStorage.removeItem('ex_expenses_v3');
-                updateUI(); alert("資料已重置");
-            }
-        }
-    }
-
-    // Modals & Logic
-    let currentActionIndex = -1, tempDeleteReason = "";
-    
-    // Recover Flow
-    const recoverModal = document.getElementById('recover-modal'), recoverInput = document.getElementById('recover-input'), recoverMsg = document.getElementById('recover-msg');
-    window.openRecoverModal = function(index) {
-        currentActionIndex = index; const item = expenses[index]; const remaining = item.cost - item.recovered;
-        recoverMsg.textContent = `「${item.name}」還差 $${remaining.toLocaleString()}，這次拿回多少？`;
-        recoverInput.value = remaining; recoverModal.style.display = 'flex'; setTimeout(() => recoverInput.focus(), 100);
-    };
-    window.closeRecoverModal = function() { recoverModal.style.display = 'none'; };
-    window.confirmRecover = function() {
-        const amount = parseInt(recoverInput.value);
-        if (!isNaN(amount) && amount > 0) {
-            expenses[currentActionIndex].recovered += amount;
-            if (expenses[currentActionIndex].recovered >= expenses[currentActionIndex].cost) { expenses[currentActionIndex].isSettled = true; alert("🎉 恭喜結清！"); }
-            updateUI(); closeRecoverModal();
-        } else { alert("請輸入有效金額"); }
-    };
-
-    // Delete Flow
-    const deleteModal = document.getElementById('delete-modal'), deleteReasonInput = document.getElementById('delete-reason-input');
-    window.openDeleteModal = function(index) {
-        currentActionIndex = index; deleteReasonInput.value = ''; deleteModal.style.display = 'flex'; setTimeout(() => deleteReasonInput.focus(), 100);
-    };
-    window.closeDeleteModal = function() { deleteModal.style.display = 'none'; };
-    window.confirmDeleteReason = function() {
-        const reason = deleteReasonInput.value.trim();
-        if (!reason) { alert("❌ 請輸入理由"); return; }
-        tempDeleteReason = reason; closeDeleteModal(); openPromiseModal(); 
-    };
-
-    // Promise Flow
-    const promiseModal = document.getElementById('promise-modal'), promiseInput = document.getElementById('promise-input'), promiseMsg = document.getElementById('promise-msg');
-    window.openPromiseModal = function() {
-        promiseMsg.innerHTML = `理由：「${tempDeleteReason}」<br>若屬實，輸入「絕不再犯」：`;
-        promiseInput.value = ''; promiseModal.style.display = 'flex'; setTimeout(() => promiseInput.focus(), 100);
-    };
-    window.closePromiseModal = function() { promiseModal.style.display = 'none'; };
-    window.confirmPromise = function() {
-        if (promiseInput.value === "絕不再犯") { closePromiseModal(); openGameModal(); } 
-        else { alert("看來妳還沒下定決心不要再犯"); }
-    };
-
-    // Game Logic
-    let gameStage = 0, currentGameQueue = [];
-    const gameModal = document.getElementById('game-modal'), qLabel = document.getElementById('q-type-label'), qContent = document.getElementById('q-content');
-    const gameInput = document.getElementById('game-answer'), progressText = document.getElementById('q-progress');
-    const displayReasonEl = document.getElementById('display-reason'), dots = document.querySelectorAll('.dot');
-    
-    const phrases = ["回頭是岸", 
-                     "及時止損", 
-                     "愛惜自己", 
-                     "不再犯賤", 
-                     "保持清醒", 
-                     "拒絕勒索", 
-                     "我是最棒的", 
-                     "下一個更好", 
-                     "遠離渣渣", 
-                     "單身萬歲", 
-                     "錢要自己花", 
-                     "腦袋要清楚", 
-                     "別當提款機", 
-                     "舊的不去，新的不來"];
-
-    function shuffleString(str) {
-        const arr = str.split('');
-        for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
-        if (arr.join('') === str && arr.length > 1) { [arr[0], arr[1]] = [arr[1], arr[0]]; }
-        return arr.join('');
-    }
-
-    window.openGameModal = function() {
-        gameStage = 0; displayReasonEl.textContent = `刪除理由：${tempDeleteReason}`;
-        generateGameQueue(); loadCurrentQuestion(); updateDots();
-        gameModal.style.display = 'flex'; setTimeout(() => gameInput.focus(), 100);
-    };
-
-    function generateGameQueue() {
-        currentGameQueue = [];
-        let tempPhrases = [...phrases];
-        for(let i=0; i<5; i++) {
-            const types = ['math_eq', 'math_op', 'text_scramble', 'text_scramble', 'logic_seq'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            let qData = {};
-            if (type === 'math_eq') {
-                const x = Math.floor(Math.random()*9)+2, a = Math.floor(Math.random()*8)+2, b = Math.floor(Math.random()*19)+1;
-                qData = { label: "求解 x", content: `${a}x + ${b} = ${(a*x)+b}`, answer: x.toString() };
-            } else if (type === 'math_op') {
-                const a = Math.floor(Math.random()*20)+1, b = Math.floor(Math.random()*8)+2, c = Math.floor(Math.random()*8)+2;
-                qData = { label: "先乘除後加減", content: `${a} + ${b} × ${c} = ?`, answer: (a+b*c).toString() };
-            } else if (type === 'text_scramble') {
-                if (tempPhrases.length === 0) tempPhrases = [...phrases];
-                const pIndex = Math.floor(Math.random() * tempPhrases.length);
-                const phrase = tempPhrases[pIndex];
-                tempPhrases.splice(pIndex, 1);
-                qData = { label: "請重組正確句子", content: shuffleString(phrase), answer: phrase };
-            } else if (type === 'logic_seq') {
-                const s = Math.floor(Math.random()*3)+1;
-                qData = { label: "下個數字？", content: `${s}, ${s+2}, ${s+4}, ?`, answer: (s+6).toString() };
-            }
-            currentGameQueue.push(qData);
-        }
-    }
-
-    function loadCurrentQuestion() {
-        const q = currentGameQueue[gameStage];
-        qLabel.textContent = q.label; qContent.textContent = q.content;
-        gameInput.value = ''; progressText.textContent = `${gameStage + 1}/5`;
-    }
-
-    window.checkGameAnswer = function() {
-        const currentQ = currentGameQueue[gameStage];
-        if (gameInput.value.trim() === currentQ.answer) {
-            gameStage++; updateDots();
-            if (gameStage >= 5) {
-                alert("🎉 驗證通過"); expenses.splice(currentActionIndex, 1); updateUI(); gameModal.style.display = 'none';
-            } else { loadCurrentQuestion(); }
-        } else {
-            alert(`❌ 錯了！正確答案是：${currentQ.answer}\n\n看來你的大腦還不清醒，請重新來過！`); gameModal.style.display = 'none';
-        }
-    };
-    function updateDots() { dots.forEach((d, i) => d.className = i < gameStage ? 'dot active' : 'dot'); }
-    gameInput.addEventListener("keypress", (e) => { if(e.key==="Enter") checkGameAnswer(); });
-
-    updateUI();
-    document.querySelector('.nav-item').classList.add('active');
-</script>
 </body>
 </html>
